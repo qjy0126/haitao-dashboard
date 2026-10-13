@@ -142,7 +142,7 @@ footer{margin-top:24px;text-align:center;color:var(--muted);font-size:12px}
 </div>
 
 <section class="grid">
-  <div class="panel full"><h3><span class="ico">📅</span>每日有效订单金额 vs 订单数</h3><div id="c2" class="chart"></div></div>
+  <div class="panel full"><h3><span class="ico">📅</span>每日有效订单金额 vs 有效订单数</h3><div id="c2" class="chart"></div></div>
   <div class="panel"><h3><span class="ico">🏪</span>店铺订单金额分布</h3><div id="c3" class="chart"></div></div>
   <div class="panel"><h3><span class="ico">🚦</span>订单状态构成（笔数）</h3><div id="c4" class="chart"></div></div>
   <div class="panel"><h3><span class="ico">💰</span>订单状态金额构成</h3><div id="c5" class="chart"></div></div>
@@ -229,7 +229,7 @@ function filteredOrders() {
 
 function aggregate(list) {
   const monthCount = {}, monthAmt = {};
-  const dayCount = {}, dayAmt = {}, dayValidAmt = {};
+  const dayCount = {}, dayAmt = {}, dayValidAmt = {}, dayValidCount = {};
   const shopCount = {}, shopAmt = {};
   const statusCount = {}, statusAmt = {};
   const sellerCount = {}, sellerAmt = {};
@@ -243,6 +243,7 @@ function aggregate(list) {
       dayAmt[d]=(dayAmt[d]||0)+o.orderAmount;
       if (!["10","60"].includes(String(o.orderStatus))) {
         dayValidAmt[d]=(dayValidAmt[d]||0)+o.orderAmount;
+        dayValidCount[d]=(dayValidCount[d]||0)+1;
       }
     }
     shopCount[o.shopName]=(shopCount[o.shopName]||0)+1;
@@ -261,7 +262,7 @@ function aggregate(list) {
     else amtBins["1000+"]++;
   });
   const months = Object.keys(monthCount).sort().map(m=>({month:m,count:monthCount[m],amount:Math.round(monthAmt[m]*100)/100}));
-  const days = Object.keys(dayCount).sort().map(d=>({date:d,count:dayCount[d],amount:Math.round(dayAmt[d]*100)/100,validAmount:Math.round((dayValidAmt[d]||0)*100)/100}));
+  const days = Object.keys(dayCount).sort().map(d=>({date:d,count:dayCount[d],amount:Math.round(dayAmt[d]*100)/100,validAmount:Math.round((dayValidAmt[d]||0)*100)/100,validCount:dayValidCount[d]||0}));
   const shops = Object.keys(shopCount).map(n=>({name:n,count:shopCount[n],amount:Math.round(shopAmt[n]*100)/100})).sort((a,b)=>b.amount-a.amount);
   const status = Object.keys(statusCount).sort().map(k=>({label:STATUS_MAP[k]||k,code:k,count:statusCount[k],amount:Math.round(statusAmt[k]*100)/100}));
   const sellers = Object.keys(shopCount).map(n=>({id:n,count:shopCount[n],amount:Math.round(shopAmt[n]*100)/100})).sort((a,b)=>b.amount-a.amount).slice(0,15);
@@ -364,12 +365,12 @@ function renderCharts(agg) {
   charts.c2.setOption({
     tooltip:{trigger:'axis'},
     grid:{left:60,right:50,top:30,bottom:40},
-    legend:{data:['有效订单金额','订单数'],textStyle:{fontSize:13}},
+    legend:{data:['有效订单金额','有效订单数'],textStyle:{fontSize:13}},
     xAxis:{type:'category',data:agg.days.map(d=>d.date.slice(5)),axisLabel:{fontSize:12,rotate:30}},
     yAxis:[{type:'value',name:'金额',axisLabel:{fontSize:12},nameTextStyle:{fontSize:12}},{type:'value',name:'笔数',position:'right',axisLabel:{fontSize:12},nameTextStyle:{fontSize:12}}],
     series:[
       {name:'有效订单金额',type:'bar',data:agg.days.map(d=>d.validAmount),itemStyle:{color:COLORS[0]},label:{show:true,position:'top',formatter:p=>'¥'+Math.round(p.value).toLocaleString(),fontSize:13,fontWeight:'bold',color:'#111827'}},
-      {name:'订单数',type:'line',yAxisIndex:1,data:agg.days.map(d=>d.count),itemStyle:{color:COLORS[2]},symbolSize:6}
+      {name:'有效订单数',type:'line',yAxisIndex:1,data:agg.days.map(d=>d.validCount),itemStyle:{color:COLORS[2]},symbolSize:6}
     ]
   }, true);
 
