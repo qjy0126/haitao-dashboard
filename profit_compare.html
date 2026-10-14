@@ -61,6 +61,22 @@ footer{margin-top:24px;text-align:center;color:var(--muted);font-size:12px}
 .rule-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13px}
 .rule-card b{display:block;margin-bottom:4px}
 .rule-card span{color:var(--muted)}
+
+.modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
+.modal-mask.show{display:flex}
+.modal{background:#fff;border-radius:14px;max-width:980px;width:100%;max-height:86vh;overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.18)}
+.modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:1}
+.modal-head h3{font-size:16px;font-weight:700}
+.modal-close{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px}
+.modal-body{padding:14px 18px 20px}
+.modal-sum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
+@media(max-width:800px){.modal-sum{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.modal-sum .box{background:#f9fafb;border-radius:10px;padding:10px 12px}
+.modal-sum .lab{font-size:12px;color:var(--muted)}
+.modal-sum .val{font-size:18px;font-weight:700;margin-top:2px}
+.clickable{cursor:pointer;color:#0369a1;text-decoration:underline;text-underline-offset:2px}
+.clickable:hover{color:#0c4a6e}
+
 </style>
 </head>
 <body>
@@ -108,7 +124,7 @@ footer{margin-top:24px;text-align:center;color:var(--muted);font-size:12px}
 </div>
 
 <section class="stats" style="grid-template-columns:repeat(4,minmax(0,1fr))">
-  <div class="stat"><div class="lab">销售额（已入库）</div><div class="val"><span class="currency">¥</span><span id="statSales">0</span></div><div class="extra" id="statRange">排除待付款/关闭/待发货</div></div>
+  <div class="stat"><div class="lab">销售额（已入库）</div><div class="val"><span class="currency">¥</span><span id="statSales">0</span></div><div class="extra" id="statRange">已入库且已完成</div></div>
   <div class="stat s3"><div class="lab">应收款</div><div class="val"><span class="currency">¥</span><span id="statReceivable">0</span></div><div class="extra">工坊暂不计入</div></div>
   <div class="stat s4"><div class="lab">回款</div><div class="val"><span class="currency">¥</span><span id="statRebate">0</span></div><div class="extra">按发生日记入月度表</div></div>
   <div class="stat s2"><div class="lab">Kakobuy 佣金奖励</div><div class="val"><span class="currency">¥</span><span id="statKakobuyCny">27,289.57</span></div><div class="extra">$4,067 · 单列不计店铺回款</div></div>
@@ -130,14 +146,15 @@ footer{margin-top:24px;text-align:center;color:var(--muted);font-size:12px}
 
 <section class="panel full" style="margin-top:14px">
   <h3><span class="ico">📅</span>月度明细（4月—9月）· 按店铺查看销售额 / 应收 / 回款</h3>
-  <div class="note">统计区间：2026年4月—9月（销售额截止9.30，10月暂不计）。每行一个店铺一个月。销售额=已入库且排除待付款/待发货/关闭；应收按店铺规则（工坊暂不计）；回款按发生日归属该月。</div>
+  <div class="note">统计区间：2026年4月—9月（截止9.30）。成交金额=已入库且已完成（与后台一致，如莉总4月27笔¥6,684）。点击成交金额可查看每笔订单、应收、回款/待回款。</div>
   <table class="table" id="monthSalesTable">
     <thead><tr>
       <th>月份</th>
       <th>店铺</th>
-      <th style="text-align:right">销售额</th>
+      <th style="text-align:right">成交金额（点击看订单）</th>
       <th style="text-align:right">应收</th>
       <th style="text-align:right">回款</th>
+      <th style="text-align:right">待回款</th>
     </tr></thead>
     <tbody></tbody>
   </table>
@@ -179,6 +196,31 @@ footer{margin-top:24px;text-align:center;color:var(--muted);font-size:12px}
 </section>
 
 
+
+<div class="modal-mask" id="orderModal" onclick="if(event.target===this)closeOrderModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h3 id="modalTitle">订单明细</h3>
+        <div class="note" id="modalNote" style="margin:4px 0 0">已入库且已完成</div>
+      </div>
+      <button class="modal-close" type="button" onclick="closeOrderModal()">关闭</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-sum" id="modalSum"></div>
+      <table class="table" id="modalOrderTable">
+        <thead><tr>
+          <th>下单时间</th><th>订单号</th>
+          <th style="text-align:right">成交金额</th>
+          <th style="text-align:right">应收</th>
+          <th style="text-align:right">说明</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <footer>海淘店铺利润对比 · 销售额含各店 · 匠心工坊暂只计销售 · 应收与回款分列不加总</footer>
 </div>
 
@@ -199,7 +241,8 @@ const PROFIT_RULES = {
 };
 const STATUS_MAP = {"10":"待付款","20":"已付款待发货","30":"已发货","31":"部分发货","40":"已退款","50":"已完成","60":"已关闭"};
 // 销售额：排除待付款(10)/待发货(20)/关闭(60)；待发货单列
-const EXCLUDE_FROM_SALES = new Set(["10","20","60"]);
+const EXCLUDE_FROM_SALES = new Set(["10","20","30","31","40","60"]); // 仅保留已完成50
+const COMPLETED_STATUS = "50";
 const PENDING_STATUS = "20";
 // 回款明细（按发生日计入筛选区间；温总9月等15号暂未计入）
 const REBATE_ENTRIES = [
@@ -234,6 +277,96 @@ const MONTH_KEYS = ["2026-04","2026-05","2026-06","2026-07","2026-08","2026-09"]
 const MONTH_LABEL = {"2026-04":"4月","2026-05":"5月","2026-06":"6月","2026-07":"7月","2026-08":"8月","2026-09":"9月"};
 const MONTH_SHOPS = ["莉总-顶级版本","温总","黄总-匠心工坊","黄总-匠心表业"];
 
+
+
+function isCompletedInStock(o) {
+  return String(o.orderStatus) === "50" && (o.itemInStock || 0) == 1;
+}
+
+function orderReceivable(shop, amount) {
+  const rule = PROFIT_RULES[shop];
+  if (!rule || rule.type === "sales_only") return null;
+  if (rule.type === "rate") return Math.round(amount * rule.rate * 100) / 100;
+  // 表业采购难按单拆，单笔暂不估应收
+  if (rule.type === "minus_purchase") return null;
+  return null;
+}
+
+function monthRebate(shop, ym) {
+  return REBATE_ENTRIES.filter(e => e.shop === shop && (e.date || "").slice(0, 7) === ym)
+    .reduce((s, e) => s + (e.amount || 0), 0);
+}
+
+function getMonthOrders(shop, ym) {
+  return ALL_ORDERS.filter(o => {
+    if (!isCompletedInStock(o)) return false;
+    if ((o.orderTime || "").slice(0, 7) !== ym) return false;
+    return shopGroup(o.shopName || "") === shop;
+  }).slice().sort((a, b) => a.orderTime < b.orderTime ? 1 : -1);
+}
+
+function money(n) {
+  if (n == null || Number.isNaN(n)) return "—";
+  return "¥" + (Math.round(n * 100) / 100).toLocaleString();
+}
+
+function closeOrderModal() {
+  const el = document.getElementById("orderModal");
+  if (el) el.classList.remove("show");
+}
+
+function openMonthOrders(shop, ym) {
+  const orders = getMonthOrders(shop, ym);
+  const sales = orders.reduce((s, o) => s + (o.orderAmount || 0), 0);
+  let recv = 0, hasRecv = false;
+  orders.forEach(o => {
+    const r = orderReceivable(shop, o.orderAmount || 0);
+    if (r != null) { recv += r; hasRecv = true; }
+  });
+  // 表业整月：销售−采购
+  if (shop === "黄总-匠心表业") {
+    let purchase = 0;
+    (HUANG_PURCHASE.aliOrders || []).forEach(o => {
+      if (o.abnormal || o.status === "交易关闭") return;
+      if ((o.day || "").slice(0, 7) !== ym) return;
+      purchase += (o.payAmount || 0);
+    });
+    recv = Math.round((sales - purchase) * 100) / 100;
+    hasRecv = true;
+  } else {
+    recv = Math.round(recv * 100) / 100;
+  }
+  const rebate = Math.round(monthRebate(shop, ym) * 100) / 100;
+  const pending = hasRecv ? Math.round((recv - rebate) * 100) / 100 : null;
+  const label = (typeof MONTH_LABEL !== "undefined" && MONTH_LABEL[ym]) ? MONTH_LABEL[ym] : ym;
+
+  document.getElementById("modalTitle").textContent = shop + " · " + label + " 订单明细";
+  document.getElementById("modalNote").textContent =
+    "口径：已入库 + 已完成｜共 " + orders.length + " 笔｜点击外侧或关闭按钮退出";
+  document.getElementById("modalSum").innerHTML = `
+    <div class="box"><div class="lab">成交金额</div><div class="val">${money(sales)}</div></div>
+    <div class="box"><div class="lab">应收款</div><div class="val" style="color:var(--up)">${hasRecv ? money(recv) : "—"}</div></div>
+    <div class="box"><div class="lab">已回款</div><div class="val" style="color:var(--down)">${rebate ? money(rebate) : "—"}</div></div>
+    <div class="box"><div class="lab">待回款</div><div class="val">${pending == null ? "—" : money(pending)}</div></div>`;
+
+  const tb = document.querySelector("#modalOrderTable tbody");
+  tb.innerHTML = orders.length ? orders.map(o => {
+    const amt = o.orderAmount || 0;
+    let r = orderReceivable(shop, amt);
+    let tip = PROFIT_RULES[shop] ? PROFIT_RULES[shop].label : "";
+    if (shop === "黄总-匠心表业") { r = null; tip = "表业应收按月汇总（销售−采购）"; }
+    if (r == null && shop === "黄总-匠心工坊") tip = "工坊暂不计应收";
+    return `<tr>
+      <td>${o.orderTime || "—"}</td>
+      <td>${o.wdOrderId || o.id || "—"}</td>
+      <td style="text-align:right;font-weight:600">${money(amt)}</td>
+      <td style="text-align:right;color:var(--up)">${r == null ? "—" : money(r)}</td>
+      <td style="text-align:right;color:var(--muted);font-size:12px">${tip || "—"}</td>
+    </tr>`;
+  }).join("") : '<tr><td colspan="5" style="text-align:center;color:var(--muted)">该月无已入库已完成订单</td></tr>';
+
+  document.getElementById("orderModal").classList.add("show");
+}
 
 function renderKakobuyDetails() {
   const rows = (KAKOBUY_REBATES || []).slice().sort((a,b) => a.date < b.date ? -1 : 1);
@@ -275,10 +408,11 @@ function renderMonthlyDetails() {
   const salesMap = {};
   MONTH_KEYS.forEach(m => { salesMap[m] = Object.fromEntries(MONTH_SHOPS.map(s => [s, 0])); });
   ALL_ORDERS.forEach(o => {
-    if ((o.itemInStock || 0) != 1) return;
-    if (EXCLUDE_FROM_SALES.has(String(o.orderStatus))) return;
+    if (!isCompletedInStock(o)) return;
     const ym = (o.orderTime || "").slice(0, 7);
     if (!salesMap[ym]) return;
+    const d = (o.orderTime || "").slice(0, 10);
+    if (d > SALES_END_DATE) return;
     const name = shopGroup(o.shopName || "未知");
     if (!(name in salesMap[ym])) return;
     salesMap[ym][name] += (o.orderAmount || 0);
@@ -288,22 +422,16 @@ function renderMonthlyDetails() {
     if (o.abnormal || o.status === '交易关闭') return;
     const ym = (o.day || "").slice(0, 7);
     if (!(ym in purchaseByMonth)) return;
+    if ((o.day || "") > SALES_END_DATE) return;
     purchaseByMonth[ym] += (o.payAmount || 0);
   });
   const rebateMap = {};
   MONTH_KEYS.forEach(m => { rebateMap[m] = Object.fromEntries(MONTH_SHOPS.map(s => [s, 0])); });
-  const rebateRows = [];
   REBATE_ENTRIES.forEach(e => {
     const ym = (e.date || "").slice(0, 7);
     if (!MONTH_KEYS.includes(ym)) return;
     if (shopFilter && e.shop !== shopFilter) return;
     if (e.shop in rebateMap[ym]) rebateMap[ym][e.shop] += (e.amount || 0);
-    rebateRows.push({...e, ym});
-  });
-  rebateRows.sort((a,b) => {
-    if (a.ym !== b.ym) return a.ym < b.ym ? -1 : 1;
-    if (a.shop !== b.shop) return a.shop < b.shop ? -1 : 1;
-    return a.date < b.date ? -1 : 1;
   });
 
   function shopReceivable(shop, ym, sales) {
@@ -314,7 +442,6 @@ function renderMonthlyDetails() {
     return 0;
   }
 
-  // 先按月收集行，月份只写一次（rowspan）
   const groups = [];
   let totalSales = 0, totalRecv = 0, totalRebate = 0;
   MONTH_KEYS.forEach(ym => {
@@ -328,7 +455,8 @@ function renderMonthlyDetails() {
       totalSales += sales;
       if (recv != null) totalRecv += recv;
       totalRebate += rebate;
-      items.push({ shop, sales, recv, rebate });
+      const pending = recv == null ? null : Math.round((recv - rebate) * 100) / 100;
+      items.push({ shop, sales, recv, rebate, pending });
     });
     if (items.length) groups.push({ ym, items });
   });
@@ -340,12 +468,16 @@ function renderMonthlyDetails() {
       const monthTd = idx === 0
         ? `<td rowspan="${g.items.length}" style="vertical-align:middle;white-space:nowrap"><b>${MONTH_LABEL[g.ym]}</b><br><span style="color:var(--muted);font-size:12px">${g.ym}</span></td>`
         : '';
+      const salesCell = it.sales
+        ? `<span class="clickable" onclick="openMonthOrders('${it.shop}','${g.ym}')">¥${it.sales.toLocaleString()}</span>`
+        : '—';
       rowsHtml.push(`<tr>
         ${monthTd}
         <td>${it.shop}</td>
-        <td style="text-align:right;font-weight:600">${it.sales ? ('¥'+it.sales.toLocaleString()) : '—'}</td>
+        <td style="text-align:right;font-weight:600">${salesCell}</td>
         <td style="text-align:right;font-weight:600;color:var(--up)">${it.recv == null ? '—' : ('¥'+it.recv.toLocaleString())}</td>
         <td style="text-align:right;font-weight:700;color:var(--down)">${it.rebate ? ('¥'+it.rebate.toLocaleString()) : '—'}</td>
+        <td style="text-align:right">${it.pending == null ? '—' : ('¥'+it.pending.toLocaleString())}</td>
       </tr>`);
     });
   });
@@ -354,11 +486,10 @@ function renderMonthlyDetails() {
       <td style="text-align:right;font-weight:700">¥${Math.round(totalSales*100)/100}</td>
       <td style="text-align:right;font-weight:700;color:var(--up)">¥${Math.round(totalRecv*100)/100}</td>
       <td style="text-align:right;font-weight:700;color:var(--down)">¥${Math.round(totalRebate*100)/100}</td>
+      <td style="text-align:right;font-weight:700">¥${Math.round((totalRecv-totalRebate)*100)/100}</td>
     </tr>`);
-  tb.innerHTML = rowsHtml.length > 1 ? rowsHtml.join('') : '<tr><td colspan="5" style="text-align:center;color:var(--muted)">无匹配数据</td></tr>';
-
+  tb.innerHTML = rowsHtml.length > 1 ? rowsHtml.join('') : '<tr><td colspan="6" style="text-align:center;color:var(--muted)">无匹配数据</td></tr>';
 }
-
 
 function filteredOrders() {
   let list = ALL_ORDERS.slice();
@@ -417,10 +548,9 @@ function pendingOrdersBase() {
 function calcProfitRows(list) {
   const salesByShop = {};
   const pendingByShop = {};
-  // 销售额：已入库筛选结果中，排除待付款/待发货/关闭
+  // 销售额：已入库 + 已完成（与后台一致）
   list.forEach(o => {
-    const st = String(o.orderStatus);
-    if (EXCLUDE_FROM_SALES.has(st)) return;
+    if (!isCompletedInStock(o)) return;
     const name = shopGroup(o.shopName || '未知');
     salesByShop[name] = (salesByShop[name] || 0) + (o.orderAmount || 0);
   });
@@ -467,7 +597,7 @@ function applyFilter() {
   document.getElementById('statRebate').textContent = Math.round(rebate*100)/100;
   document.getElementById('statRange').textContent = (start||'…') + ' ~ ' + (end||'…');
   document.getElementById('profitNote').textContent =
-    `统计4月—9月（截止9.30）｜销售额（已入库·排除待付款/关闭/待发货）¥${Math.round(sales*100)/100}｜应收款 ¥${Math.round(receivable*100)/100}（工坊不计）｜回款 ¥${Math.round(rebate*100)/100}｜温总9月等15号｜采购同步 ${HUANG_PURCHASE.generatedAt}`;
+    `统计4月—9月（截止9.30）｜成交金额（已入库·已完成）¥${Math.round(sales*100)/100}｜应收款 ¥${Math.round(receivable*100)/100}（工坊不计）｜回款 ¥${Math.round(rebate*100)/100}｜温总9月等15号｜采购同步 ${HUANG_PURCHASE.generatedAt}`;
 
   const tb = document.querySelector('#profitTable tbody');
   tb.innerHTML = rows.length ? rows.map(r => {
@@ -499,6 +629,7 @@ document.getElementById('dateRange').addEventListener('change', (e) => {
   document.getElementById('startDate').value = start;
   document.getElementById('endDate').value = end;
   applyFilter();
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOrderModal(); });
 });
 ['shopFilter','inStockFilter','startDate','endDate'].forEach(id => {
   document.getElementById(id).addEventListener('change', applyFilter);
