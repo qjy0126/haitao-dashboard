@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>海淘业务 · 店铺利润对比</title>
-<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 <style>
 
 :root{
@@ -56,7 +55,7 @@ h1{font-size:25px;font-weight:700}
 .tag-wait{background:#fefce8;color:#a16207}
 .note{font-size:12px;color:var(--muted);margin-top:6px}
 footer{margin-top:24px;text-align:center;color:var(--muted);font-size:12px}
-@media(max-width:900px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.grid{grid-template-columns:1fr}.panel.full{grid-column:span 1}}
+@media(max-width:1100px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.grid{grid-template-columns:1fr}.panel.full{grid-column:span 1}}
 
 .rule-box{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:12px 0 18px}
 .rule-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13px}
@@ -69,7 +68,7 @@ footer{margin-top:24px;text-align:center;color:var(--muted);font-size:12px}
 <header>
   <div>
     <h1>海淘业务 · 店铺利润对比</h1>
-    <div class="subtitle">独立利润看板｜温总三店合并计算｜销售=有效订单金额｜回款按发生日随筛选｜温总9月回款等15号｜生成于 2026-10-13</div>
+    <div class="subtitle">独立利润看板｜温总三店合并｜销售额=已入库非待付款/关闭｜匠心工坊暂只计销售｜回款单列｜生成于 2026-10-13</div>
   </div>
   <div class="toolbar">
     <span class="chip"><span class="dot"></span>利润专用页</span>
@@ -101,39 +100,48 @@ footer{margin-top:24px;text-align:center;color:var(--muted);font-size:12px}
 </header>
 
 <div class="rule-box">
-  <div class="rule-card"><b>莉总-顶级版本</b><span>利润 = 销售金额 × 0.1 + 佣金回款</span></div>
-  <div class="rule-card"><b>温总（三店合并）</b><span>tl商品+Cultbuy / 我的小店 / 全量产品新店 合并一家<br>利润 = 销售金额 × 0.2 + 佣金回款<br>9月回款等15号</span></div>
-  <div class="rule-card"><b>黄总-匠心工坊</b><span>利润 = 销售金额 × 0.1</span></div>
-  <div class="rule-card"><b>黄总-匠心表业</b><span>利润 = 销售金额 − 1688采购价</span></div>
+  <div class="rule-card"><b>莉总-顶级版本</b><span>销售额 = 已入库且非待付款/关闭<br>应收款 = 销售额 × 0.1</span></div>
+  <div class="rule-card"><b>温总（三店合并）</b><span>tl商品+Cultbuy / 我的小店 / 全量产品新店 合并一家<br>销售额 = 已入库且非待付款/关闭<br>应收款 = 销售额 × 0.2 · 9月回款等15号</span></div>
+  <div class="rule-card"><b>黄总-匠心工坊</b><span>暂只统计销售额（尚未回款，不列应收）<br>销售额 = 已入库且非待付款/关闭</span></div>
+  <div class="rule-card"><b>黄总-匠心表业</b><span>销售额 = 已入库且非待付款/关闭<br>应收款 = 销售额 − 1688采购价</span></div>
 </div>
 
-<section class="stats">
-  <div class="stat"><div class="lab">有效销售合计</div><div class="val"><span class="currency">¥</span><span id="statSales">0</span></div><div class="extra" id="statRange">—</div></div>
-  <div class="stat s2"><div class="lab">采购合计（表业）</div><div class="val"><span class="currency">¥</span><span id="statPurchase">0</span></div><div class="extra">排除关闭/异常单</div></div>
-  <div class="stat s3"><div class="lab">供应商回款合计</div><div class="val"><span class="currency">¥</span><span id="statRebate">0</span></div><div class="extra">按回款日期随筛选联动</div></div>
-  <div class="stat s4"><div class="lab">利润合计</div><div class="val"><span class="currency">¥</span><span id="statProfit">0</span></div><div class="extra">规则利润 + 回款</div></div>
-  <div class="stat s5"><div class="lab">综合利润率</div><div class="val"><span id="statRate">0</span>%</div><div class="extra">利润 ÷ 销售</div></div>
+<section class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+  <div class="stat"><div class="lab">销售额（已入库）</div><div class="val"><span class="currency">¥</span><span id="statSales">0</span></div><div class="extra" id="statRange">排除待付款/关闭/待发货</div></div>
+  <div class="stat s3"><div class="lab">应收款</div><div class="val"><span class="currency">¥</span><span id="statReceivable">0</span></div><div class="extra">工坊暂不计入</div></div>
+  <div class="stat s4"><div class="lab">回款</div><div class="val"><span class="currency">¥</span><span id="statRebate">0</span></div><div class="extra">按发生日记入月度表</div></div>
 </section>
 
 <section class="panel full">
-  <h3><span class="ico">💹</span>店铺利润对比</h3>
+  <h3><span class="ico">💹</span>店铺销售额 / 应收对比（回款另列）</h3>
   <div class="note" id="profitNote">加载中…</div>
-  <div id="c1" class="chart" style="height:360px"></div>
   <table class="table" id="profitTable">
     <thead><tr>
       <th>店铺</th><th>规则</th>
-      <th style="text-align:right">销售金额</th>
-      <th style="text-align:right">采购金额</th>
-      <th style="text-align:right">供应商回款</th>
-      <th style="text-align:right">规则利润</th>
-      <th style="text-align:right">最终利润</th>
-      <th style="text-align:right">利润率</th>
+      <th style="text-align:right">销售额</th>
+      <th style="text-align:right">应收款</th>
+      <th style="text-align:right">回款</th>
     </tr></thead>
     <tbody></tbody>
   </table>
 </section>
 
-<footer>海淘店铺利润对比 · 独立页面 · 原经营看板不变 · 回款金额待补充</footer>
+<section class="panel full" style="margin-top:14px">
+  <h3><span class="ico">📅</span>月度明细（4月—10月）· 按店铺查看销售额 / 应收 / 回款</h3>
+  <div class="note">每行一个店铺一个月：可直接看「温总7月回款」「莉总6月回款」等。销售额=已入库且排除待付款/待发货/关闭；应收按店铺规则（工坊暂不计）；回款按发生日归属该月。</div>
+  <table class="table" id="monthSalesTable">
+    <thead><tr>
+      <th>月份</th>
+      <th>店铺</th>
+      <th style="text-align:right">销售额</th>
+      <th style="text-align:right">应收</th>
+      <th style="text-align:right">回款</th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+</section>
+
+<footer>海淘店铺利润对比 · 销售额含各店 · 匠心工坊暂只计销售 · 应收与回款分列不加总</footer>
 </div>
 
 <script>
@@ -146,11 +154,15 @@ function shopGroup(name) {
   return name;
 }
 const PROFIT_RULES = {
-  "莉总-顶级版本": {type:"rate", rate:0.1, label:"销售×10% + 回款"},
-  "温总": {type:"rate", rate:0.2, label:"三店合并·销售×20% + 回款"},
-  "黄总-匠心工坊": {type:"rate", rate:0.1, label:"销售×10%"},
+  "莉总-顶级版本": {type:"rate", rate:0.1, label:"销售×10%"},
+  "温总": {type:"rate", rate:0.2, label:"三店合并·销售×20%"},
+  "黄总-匠心工坊": {type:"sales_only", label:"暂只计销售额"},
   "黄总-匠心表业": {type:"minus_purchase", label:"销售−采购价"}
 };
+const STATUS_MAP = {"10":"待付款","20":"已付款待发货","30":"已发货","31":"部分发货","40":"已退款","50":"已完成","60":"已关闭"};
+// 销售额：排除待付款(10)/待发货(20)/关闭(60)；待发货单列
+const EXCLUDE_FROM_SALES = new Set(["10","20","60"]);
+const PENDING_STATUS = "20";
 // 回款明细（按发生日计入筛选区间；温总9月等15号暂未计入）
 const REBATE_ENTRIES = [
   // 温总佣金回款
@@ -170,8 +182,100 @@ const REBATE_ENTRIES = [
   {shop:"莉总-顶级版本", date:"2026-10-09", amount:5000, note:"9/16～10/9提现5万，佣金回款5000"}
 ];
 
-const COLORS = ['#0ea5e9','#8b5cf6','#f59e0b','#14b8a6','#dc2626','#16a34a'];
-let chart;
+
+const MONTH_KEYS = ["2026-04","2026-05","2026-06","2026-07","2026-08","2026-09","2026-10"];
+const MONTH_LABEL = {"2026-04":"4月","2026-05":"5月","2026-06":"6月","2026-07":"7月","2026-08":"8月","2026-09":"9月","2026-10":"10月"};
+const MONTH_SHOPS = ["莉总-顶级版本","温总","黄总-匠心工坊","黄总-匠心表业"];
+
+function renderMonthlyDetails() {
+  const shopFilter = document.getElementById('shopFilter').value;
+  const salesMap = {};
+  MONTH_KEYS.forEach(m => { salesMap[m] = Object.fromEntries(MONTH_SHOPS.map(s => [s, 0])); });
+  ALL_ORDERS.forEach(o => {
+    if ((o.itemInStock || 0) != 1) return;
+    if (EXCLUDE_FROM_SALES.has(String(o.orderStatus))) return;
+    const ym = (o.orderTime || "").slice(0, 7);
+    if (!salesMap[ym]) return;
+    const name = shopGroup(o.shopName || "未知");
+    if (!(name in salesMap[ym])) return;
+    salesMap[ym][name] += (o.orderAmount || 0);
+  });
+  const purchaseByMonth = Object.fromEntries(MONTH_KEYS.map(m => [m, 0]));
+  (HUANG_PURCHASE.aliOrders || []).forEach(o => {
+    if (o.abnormal || o.status === '交易关闭') return;
+    const ym = (o.day || "").slice(0, 7);
+    if (!(ym in purchaseByMonth)) return;
+    purchaseByMonth[ym] += (o.payAmount || 0);
+  });
+  const rebateMap = {};
+  MONTH_KEYS.forEach(m => { rebateMap[m] = Object.fromEntries(MONTH_SHOPS.map(s => [s, 0])); });
+  const rebateRows = [];
+  REBATE_ENTRIES.forEach(e => {
+    const ym = (e.date || "").slice(0, 7);
+    if (!MONTH_KEYS.includes(ym)) return;
+    if (shopFilter && e.shop !== shopFilter) return;
+    if (e.shop in rebateMap[ym]) rebateMap[ym][e.shop] += (e.amount || 0);
+    rebateRows.push({...e, ym});
+  });
+  rebateRows.sort((a,b) => {
+    if (a.ym !== b.ym) return a.ym < b.ym ? -1 : 1;
+    if (a.shop !== b.shop) return a.shop < b.shop ? -1 : 1;
+    return a.date < b.date ? -1 : 1;
+  });
+
+  function shopReceivable(shop, ym, sales) {
+    const rule = PROFIT_RULES[shop];
+    if (!rule || rule.type === 'sales_only') return null;
+    if (rule.type === 'rate') return Math.round(sales * rule.rate * 100) / 100;
+    if (rule.type === 'minus_purchase') return Math.round((sales - (purchaseByMonth[ym] || 0)) * 100) / 100;
+    return 0;
+  }
+
+  // 先按月收集行，月份只写一次（rowspan）
+  const groups = [];
+  let totalSales = 0, totalRecv = 0, totalRebate = 0;
+  MONTH_KEYS.forEach(ym => {
+    const items = [];
+    MONTH_SHOPS.forEach(shop => {
+      if (shopFilter && shopFilter !== shop) return;
+      const sales = Math.round((salesMap[ym][shop] || 0) * 100) / 100;
+      const recv = shopReceivable(shop, ym, sales);
+      const rebate = Math.round((rebateMap[ym][shop] || 0) * 100) / 100;
+      if (!sales && !rebate && (recv === null || !recv)) return;
+      totalSales += sales;
+      if (recv != null) totalRecv += recv;
+      totalRebate += rebate;
+      items.push({ shop, sales, recv, rebate });
+    });
+    if (items.length) groups.push({ ym, items });
+  });
+
+  const tb = document.querySelector("#monthSalesTable tbody");
+  const rowsHtml = [];
+  groups.forEach(g => {
+    g.items.forEach((it, idx) => {
+      const monthTd = idx === 0
+        ? `<td rowspan="${g.items.length}" style="vertical-align:middle;white-space:nowrap"><b>${MONTH_LABEL[g.ym]}</b><br><span style="color:var(--muted);font-size:12px">${g.ym}</span></td>`
+        : '';
+      rowsHtml.push(`<tr>
+        ${monthTd}
+        <td>${it.shop}</td>
+        <td style="text-align:right;font-weight:600">${it.sales ? ('¥'+it.sales.toLocaleString()) : '—'}</td>
+        <td style="text-align:right;font-weight:600;color:var(--up)">${it.recv == null ? '—' : ('¥'+it.recv.toLocaleString())}</td>
+        <td style="text-align:right;font-weight:700;color:var(--down)">${it.rebate ? ('¥'+it.rebate.toLocaleString()) : '—'}</td>
+      </tr>`);
+    });
+  });
+  rowsHtml.push(`<tr style="background:#f9fafb">
+      <td colspan="2"><b>合计</b></td>
+      <td style="text-align:right;font-weight:700">¥${Math.round(totalSales*100)/100}</td>
+      <td style="text-align:right;font-weight:700;color:var(--up)">¥${Math.round(totalRecv*100)/100}</td>
+      <td style="text-align:right;font-weight:700;color:var(--down)">¥${Math.round(totalRebate*100)/100}</td>
+    </tr>`);
+  tb.innerHTML = rowsHtml.length > 1 ? rowsHtml.join('') : '<tr><td colspan="5" style="text-align:center;color:var(--muted)">无匹配数据</td></tr>';
+
+}
+
 
 function filteredOrders() {
   let list = ALL_ORDERS.slice();
@@ -210,31 +314,55 @@ function rebateInRange(shop) {
   }).reduce((s,e)=>s+(e.amount||0), 0);
 }
 
+function pendingOrdersBase() {
+  // 待发货按店铺+日期筛选，不受「已入库」限制，便于另列查看
+  let list = ALL_ORDERS.slice();
+  const shop = document.getElementById('shopFilter').value;
+  const start = document.getElementById('startDate').value;
+  const end = document.getElementById('endDate').value;
+  if (shop === '温总') list = list.filter(o => WEN_SHOPS.includes(o.shopName));
+  else if (shop) list = list.filter(o => o.shopName === shop);
+  if (start) list = list.filter(o => o.orderTime.slice(0,10) >= start);
+  if (end) list = list.filter(o => o.orderTime.slice(0,10) <= end);
+  return list.filter(o => String(o.orderStatus) === PENDING_STATUS);
+}
+
 function calcProfitRows(list) {
   const salesByShop = {};
+  const pendingByShop = {};
+  // 销售额：已入库筛选结果中，排除待付款/待发货/关闭
   list.forEach(o => {
-    if (['10','60'].includes(String(o.orderStatus))) return;
+    const st = String(o.orderStatus);
+    if (EXCLUDE_FROM_SALES.has(st)) return;
     const name = shopGroup(o.shopName || '未知');
     salesByShop[name] = (salesByShop[name] || 0) + (o.orderAmount || 0);
+  });
+  pendingOrdersBase().forEach(o => {
+    const name = shopGroup(o.shopName || '未知');
+    pendingByShop[name] = (pendingByShop[name] || 0) + (o.orderAmount || 0);
   });
   const purchaseTotal = filteredHuangPurchase().reduce((s,o)=>s+(o.payAmount||0),0);
   const shopFilter = document.getElementById('shopFilter').value;
   const rows = Object.keys(PROFIT_RULES).filter(n => !shopFilter || shopFilter === n).map(name => {
     const rule = PROFIT_RULES[name];
     const sales = Math.round((salesByShop[name] || 0) * 100) / 100;
+    const pending = Math.round((pendingByShop[name] || 0) * 100) / 100;
     const rebate = Math.round(rebateInRange(name) * 100) / 100;
-    let purchase = 0, baseProfit = 0;
-    if (rule.type === 'rate') {
+    let purchase = 0, baseProfit = 0, showReceivable = true;
+    if (rule.type === 'sales_only') {
+      showReceivable = false;
+      baseProfit = 0;
+    } else if (rule.type === 'rate') {
       baseProfit = Math.round(sales * rule.rate * 100) / 100;
     } else {
       purchase = Math.round(purchaseTotal * 100) / 100;
       baseProfit = Math.round((sales - purchase) * 100) / 100;
     }
     const profit = Math.round((baseProfit + rebate) * 100) / 100;
-    const rate = sales > 0 ? (profit / sales * 100) : 0;
-    return {name, rule: rule.label, sales, purchase, rebate, baseProfit, profit, rate};
+    const rate = (showReceivable && sales > 0) ? (baseProfit / sales * 100) : 0;
+    return {name, rule: rule.label, sales, pending, purchase, rebate, baseProfit, profit, rate, showReceivable};
   });
-  rows.sort((a,b) => b.profit - a.profit);
+  rows.sort((a,b) => b.sales - a.sales);
   return rows;
 }
 
@@ -246,44 +374,31 @@ function applyFilter() {
   const sales = rows.reduce((s,r)=>s+r.sales,0);
   const purchase = rows.reduce((s,r)=>s+r.purchase,0);
   const rebate = rows.reduce((s,r)=>s+r.rebate,0);
-  const profit = rows.reduce((s,r)=>s+r.profit,0);
+  const receivable = rows.reduce((s,r)=>s+(r.showReceivable ? r.baseProfit : 0),0);
   document.getElementById('statSales').textContent = Math.round(sales*100)/100;
-  document.getElementById('statPurchase').textContent = Math.round(purchase*100)/100;
+  document.getElementById('statReceivable').textContent = Math.round(receivable*100)/100;
   document.getElementById('statRebate').textContent = Math.round(rebate*100)/100;
-  document.getElementById('statProfit').textContent = Math.round(profit*100)/100;
-  document.getElementById('statRate').textContent = sales>0 ? (profit/sales*100).toFixed(1) : '0.0';
   document.getElementById('statRange').textContent = (start||'…') + ' ~ ' + (end||'…');
   document.getElementById('profitNote').textContent =
-    `温总三店已合并｜回款按日期计入筛选｜温总9月回款等15号｜黄总表业采购 ${HUANG_PURCHASE.generatedAt}｜利润合计 ¥${Math.round(profit*100)/100}`;
+    `销售额（已入库·排除待付款/关闭/待发货）¥${Math.round(sales*100)/100}｜应收款 ¥${Math.round(receivable*100)/100}（工坊不计）｜回款 ¥${Math.round(rebate*100)/100}｜温总9月等15号｜采购同步 ${HUANG_PURCHASE.generatedAt}`;
 
   const tb = document.querySelector('#profitTable tbody');
-  tb.innerHTML = rows.length ? rows.map(r => `<tr>
+  tb.innerHTML = rows.length ? rows.map(r => {
+      const recvCell = r.showReceivable
+        ? `¥${r.baseProfit.toLocaleString()}`
+        : '<span style="color:var(--muted)">—</span>';
+      return `<tr>
       <td>${r.name}</td>
-      <td><span class="tag tag-paid">${r.rule}</span></td>
-      <td style="text-align:right">¥${r.sales.toLocaleString()}</td>
-      <td style="text-align:right">${r.purchase ? ('¥'+r.purchase.toLocaleString()) : '—'}</td>
-      <td style="text-align:right">${r.rebate ? ('¥'+r.rebate.toLocaleString()) : '—'}</td>
-      <td style="text-align:right">¥${r.baseProfit.toLocaleString()}</td>
-      <td style="text-align:right;font-weight:700;color:${r.profit>=0?'var(--up)':'var(--down)'}">¥${r.profit.toLocaleString()}</td>
-      <td style="text-align:right">${r.rate.toFixed(1)}%</td>
-    </tr>`).join('') : '<tr><td colspan="8" style="text-align:center;color:var(--muted)">无匹配数据</td></tr>';
+      <td><span class="tag ${r.showReceivable ? 'tag-paid' : 'tag-wait'}">${r.rule}</span></td>
+      <td style="text-align:right;font-weight:700">¥${r.sales.toLocaleString()}</td>
+      <td style="text-align:right;font-weight:700;color:var(--up)">${recvCell}</td>
+      <td style="text-align:right;font-weight:700;color:var(--down)">${r.rebate ? ('¥'+r.rebate.toLocaleString()) : '—'}</td>
+    </tr>`;
+    }).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--muted)">无匹配数据</td></tr>';
 
-  chart.setOption({
-    tooltip:{trigger:'axis', axisPointer:{type:'shadow'}},
-    legend:{data:['销售金额','规则利润','最终利润']},
-    grid:{left:70,right:30,top:40,bottom:70},
-    xAxis:{type:'category', data:rows.map(r=>r.name), axisLabel:{rotate:18, interval:0, fontSize:11}},
-    yAxis:{type:'value', name:'金额(¥)'},
-    series:[
-      {name:'销售金额', type:'bar', data:rows.map(r=>r.sales), itemStyle:{color:COLORS[0]},
-        label:{show:true,position:'top',fontSize:10,formatter:p=>'¥'+Math.round(p.value).toLocaleString()}},
-      {name:'规则利润', type:'bar', data:rows.map(r=>r.baseProfit), itemStyle:{color:COLORS[2]},
-        label:{show:true,position:'top',fontSize:10,formatter:p=>'¥'+Math.round(p.value).toLocaleString()}},
-      {name:'最终利润', type:'bar', data:rows.map(r=>r.profit), itemStyle:{color:COLORS[5]},
-        label:{show:true,position:'top',fontSize:10,formatter:p=>'¥'+Math.round(p.value).toLocaleString()}}
-    ]
-  }, true);
+  renderMonthlyDetails();
 }
+
 
 document.getElementById('dateRange').addEventListener('change', (e) => {
   const v = e.target.value;
@@ -301,8 +416,6 @@ document.getElementById('dateRange').addEventListener('change', (e) => {
 ['shopFilter','inStockFilter','startDate','endDate'].forEach(id => {
   document.getElementById(id).addEventListener('change', applyFilter);
 });
-window.addEventListener('resize', () => chart && chart.resize());
-chart = echarts.init(document.getElementById('c1'));
 applyFilter();
 </script>
 </body>
